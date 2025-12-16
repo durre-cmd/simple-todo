@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Professional ToDo List</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>My To-Do List</h1>
+    <div class="input-group">
+      <input id="taskInput" placeholder="Enter a new task">
+      <button onclick="addTask()">Add</button>
+    </div>
+    <ul id="taskList"></ul>
+  </div>
+
+  <script>
+    const taskList = document.getElementById('taskList');
+    const taskInput = document.getElementById('taskInput');
+
+    async function loadTasks() {
+      const res = await fetch('/tasks');
+      const tasks = await res.json();
+      taskList.innerHTML = '';
+      tasks.forEach(task => {
+        const li = document.createElement('li');
+        li.textContent = task.name;
+        li.onclick = () => editTask(task.id, task.name);
+
+        const del = document.createElement('button');
+        del.textContent = 'Delete';
+        del.className = 'delete-btn';
+        del.onclick = (e) => { e.stopPropagation(); deleteTask(task.id); };
+
+        li.appendChild(del);
+        taskList.appendChild(li);
+      });
+    }
+
+    async function addTask() {
+      const name = taskInput.value;
+      if (!name) return;
+      await fetch('/tasks', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({name})
+      });
+      taskInput.value = '';
+      loadTasks();
+    }
+
+    async function editTask(id, oldName) {
+      const name = prompt('Edit task:', oldName);
+      if (!name) return;
+      await fetch('/tasks/' + id, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({name})
+      });
+      loadTasks();
+    }
+
+    async function deleteTask(id) {
+      await fetch('/tasks/' + id, { method: 'DELETE' });
+      loadTasks();
+    }
+
+    loadTasks();
+  </script>
+</body>
+</html>
